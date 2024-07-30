@@ -1,7 +1,11 @@
 package com.telusko.SpringScProj1.rest;
 
 import com.telusko.SpringScProj1.service.UserService;
+import com.telusko.SpringScProj1.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,19 +21,32 @@ public class UserController
 	private UserService service;
 	
 	private BCryptPasswordEncoder encoder=new BCryptPasswordEncoder(12);
-	
-	@PostMapping("registeru")
+
+	@Autowired
+	private AuthenticationManager authenticationManager;
+
+	@Autowired
+	private JwtService jwtService;
+
+	@PostMapping("register")
 	public Users register(@RequestBody Users user)
 	{
-		//String pass=user.getPassword();
-//		String encoded = encoder.encode(user.getPassword());
-//		System.out.println(encoded);
-//		user.setPassword(encoded);
 		user.setPassword(encoder.encode(user.getPassword()));
-		System.out.println(user.getPassword());
 		return service.saveTheUser(user);
-		
 	}
+
+	@PostMapping("login")
+	public String login(@RequestBody Users user)
+	{
+		Authentication authentication = authenticationManager
+				.authenticate(new UsernamePasswordAuthenticationToken(user.getName(), user.getPassword()));
+
+		if(authentication.isAuthenticated()){
+			return jwtService.generateToken(user.getName());
+		}
+		return "Login Successful";
+	}
+
 	@GetMapping("info")
 	public String getInfo()
 	{
